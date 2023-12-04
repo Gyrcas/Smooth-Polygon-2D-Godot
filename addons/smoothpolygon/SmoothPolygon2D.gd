@@ -144,7 +144,7 @@ func set_ignore_points_outline(value : PackedInt32Array) -> void:
 ## Do not change value of this variable
 @export var smoothed_pol : PackedVector2Array = []
 
-@export var outlines_array : Array[PackedVector2Array] = []
+@export var outlines_array : Array = []
 
 var outline_node : OutlineSmoothPolygon2D = OutlineSmoothPolygon2D.new()
 
@@ -179,8 +179,11 @@ func _draw() -> void:
 	
 	outline_node.outlines = outlines_array
 
+var base_polygon : PackedVector2Array = []
+
 func _ready() -> void:
 	if !Engine.is_editor_hint():
+		base_polygon = polygon
 		polygon = smoothed_pol
 		outline_node.outlines = outlines_array.duplicate()
 		smoothed_pol.clear()
@@ -191,10 +194,14 @@ func _ready() -> void:
 				split_polygon(polygon)
 				queue_free()
 			split_start.call_deferred()
-			
 	else:
 		color.a = 0
 	add_child(outline_node)
+	
+func _notification(what : int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if weakref(outline_node).get_ref():
+			outline_node.queue_free()
 
 #Smooth the given polygon by using a curve2D to make a smooth transition between the points.
 #Return the smoothed polygon as "polygon", the rect values as "top","bottom","left" and "right",
